@@ -1,8 +1,8 @@
 .autotest
-History.txt
+History.rdoc
 Manifest.txt
-README.txt
+README.rdoc
 Rakefile
-bin/nexus_dependency
 lib/nexus_dependency.rb
-test/test_nexus_dependency.rb
+spec/spec_helper.rb
+spec/nexus_dependency/rake_spec.rb
