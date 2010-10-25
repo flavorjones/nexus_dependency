@@ -1,0 +1,8 @@
+.autotest
+History.txt
+Manifest.txt
+README.txt
+Rakefile
+bin/nexus_dependency
+lib/nexus_dependency.rb
+test/test_nexus_dependency.rb
