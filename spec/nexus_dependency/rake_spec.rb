@@ -1,6 +1,6 @@
 require 'spec/spec_helper'
 
-describe Nexus::Dependency do
+describe Nexus::Rake do
   class FakeRake
     include Rake
     include Nexus::Rake
