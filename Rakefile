@@ -12,6 +12,8 @@ Hoe.spec 'nexus_dependency' do
   self.testlib = :rspec
 
   self.extra_deps << ["rake", ">=0.8.7"]
+  self.extra_deps << ["rnexus", ">=0.0.6"]
+
   self.extra_dev_deps << ["rspec", "~>1"]
 end
 

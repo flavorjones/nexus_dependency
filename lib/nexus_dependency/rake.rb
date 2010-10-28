@@ -14,30 +14,31 @@ module Nexus
     module ClassMethods
       #  Declare a nexus dependency. This creates rake tasks for 'nexus:install' and 'nexus:update'.
       #
-      #  +name+ is the nexus 'artifactId'.
-      #
-      #  +options+ is a hash whose keys can include
-      #  * :group_id - nexus 'groupId'
-      #  * :version - nexus 'version' (e.g., "release-2.1.0")
-      #  * :packaging - nexus 'packaging' (e.g., 'tar.gz', 'jar', etc.)
-      #  * :repo_id - nexus 'repoId'
+      #  +options+ is a hash whose keys MUST include:
+      #  * :name - package name (nexus 'artifactId')
+      #  * :uri - repository URI (nexus 'resourceURI')
+      #  and whose keys CAN include the following artifact specifications:
+      #  * :version - nexus 'version' (e.g., "2.1.0")
+      #  * :group - nexus 'groupId'
+      #  * :type - nexus 'packaging' (e.g., 'tar.gz', 'jar', etc.)
+      #  * :repo - nexus 'repoId'
       #  * :classifier - nexus 'classifier'
       #
-      #  If an option is specified, then packages will be filtered by that parameter.
-      #  If an option is not specified, then no filtering will be done.
+      #  If an artifact specification option is specified, then packages will be filtered by that parameter.
+      #  If no artifact specification options are specified, then no filtering will be done.
       #  If +:version+ is not specified, then you'll receive the most recent version (naively, the last package when sorted by 'version')
       #
       #  Example:
       #    nexus 'activemq'
       #    nexus 'activemq', :version => "5.4.0", :packaging => 'tar.gz'
       #
-      def nexus(name, options={})
+      def nexus(attributes={})
         ::Rake.application.in_namespace "nexus" do
           ::Rake::Task.define_task :install do
-            ::Nexus::Dependency.new(name, options).install
+            ::Nexus::Dependency.new(attributes).install
           end
           ::Rake::Task.define_task :update do
-            ::Nexus::Dependency.new(name, options).update
+            ::Nexus::Dependency.new(attributes).update
           end
         end
       end

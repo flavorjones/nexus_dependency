@@ -23,15 +23,14 @@ describe Nexus::Rake do
 
   before do
     Rake::Task.clear
+    @default_attributes = {:name => "foo", :uri => "http://sample.net/" }
   end
 
   describe "DSL" do
     describe "nexus" do
       it "creates two rake tasks for installing and updating nexus packages" do
         tasks = new_tasks do
-          fake_rake do
-            nexus({}) 
-          end
+          fake_rake { nexus @default_attributes }
         end
         tasks.length.should == 2
         tasks[0].should be_instance_of(Rake::Task)
@@ -40,11 +39,11 @@ describe Nexus::Rake do
 
       it "creates a 'nexus:install' rake task that invokes Nexus::Dependency#install" do
         tasks = new_tasks "nexus:install" do
-          fake_rake { nexus({}) }
+          fake_rake { nexus @default_attributes }
         end
         tasks.length.should == 1
 
-        mock_dependency = Nexus::Dependency.new "foo"
+        mock_dependency = Nexus::Dependency.new @default_attributes
         mock_dependency.should_receive(:install).and_return(nil)
         Nexus::Dependency.should_receive(:new).and_return(mock_dependency)
 
@@ -53,11 +52,11 @@ describe Nexus::Rake do
 
       it "creates a 'nexus:update' rake task that invokes Nexus::Dependency#update" do
         tasks = new_tasks "nexus:update" do
-          fake_rake { nexus({}) }
+          fake_rake { nexus @default_attributes }
         end
         tasks.length.should == 1
 
-        mock_dependency = Nexus::Dependency.new "foo"
+        mock_dependency = Nexus::Dependency.new @default_attributes
         mock_dependency.should_receive(:update).and_return(nil)
         Nexus::Dependency.should_receive(:new).and_return(mock_dependency)
 
