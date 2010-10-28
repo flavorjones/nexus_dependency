@@ -53,6 +53,11 @@ module Nexus
 
     def desired_artifact
       possible_matches = repository.find_artifacts artifact_attributes
+      possible_matches = possible_matches.select do |possible_match|
+        artifact_attributes.inject(true) do |state, keyval|
+          state && possible_match.send(keyval.first) == keyval.last
+        end
+      end
       possible_matches.inject(possible_matches.first) do |best, current|
         if best.version && current.version && current.version > best.version
           current
@@ -67,6 +72,13 @@ module Nexus
     end
 
     def artifact_attributes
+      attributes.inject({}) do |hash, kv|
+        hash[kv.first] = kv.last if [:group, :name, :type, :version, :repo, :classifier].include?(kv.first)
+        hash
+      end
+    end
+
+    def artifact_query_attributes
       attributes.inject({}) do |hash, kv|
         hash[kv.first] = kv.last if [:group, :name, :type].include?(kv.first)
         hash

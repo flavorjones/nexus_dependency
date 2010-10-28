@@ -55,27 +55,85 @@ describe Nexus::Dependency do
       context "multiple versions of the named artifact" do
         before do
           artifacts = [
-            Nexus::Artifact.new('version' => "2.0"),
-            Nexus::Artifact.new('version' => "3.0"),
-            Nexus::Artifact.new('version' => "1.0"),
+            Nexus::Artifact.new('version' => "2.0", 'artifactId' => "foo"),
+            Nexus::Artifact.new('version' => "3.0", 'artifactId' => "foo"),
+            Nexus::Artifact.new('version' => "1.0", 'artifactId' => "foo"),
           ]
           repository = Nexus::Repository.new "http://sample.net/"
           repository.stub!(:find_artifacts).and_return(artifacts)
           Nexus::Repository.stub!(:new).and_return(repository)
         end
 
-        it "should select the most recent version" do
+        it "should return the artifact with the most recent version" do
           @dependency.desired_artifact.version.should == "3.0"
         end
       end
     end
 
-    context "with artifact options" do
+    context "with artifact options provided for filtering multiple artifacts" do
+      before do
+        @artifacts = [
+          Nexus::Artifact.new('artifactId' => 'shizzle', 'version' => "2.0", 'groupId' => "foo", 'packaging' => "jar"),
+          Nexus::Artifact.new('artifactId' => 'shizzle', 'version' => "2.0", 'groupId' => "foo", 'packaging' => "tar.gz"),
+          Nexus::Artifact.new('artifactId' => 'shizzle', 'version' => "2.0", 'groupId' => "bar", 'packaging' => "jar"),
+          Nexus::Artifact.new('artifactId' => 'shizzle', 'version' => "2.0", 'groupId' => "bar", 'packaging' => "tar.gz"),
+          Nexus::Artifact.new('artifactId' => 'shizzle', 'version' => "2.2", 'groupId' => "foo", 'packaging' => "jar"),
+          Nexus::Artifact.new('artifactId' => 'shizzle', 'version' => "2.2", 'groupId' => "foo", 'packaging' => "tar.gz"),
+          Nexus::Artifact.new('artifactId' => 'shizzle', 'version' => "2.2", 'groupId' => "bar", 'packaging' => "jar"),
+          Nexus::Artifact.new('artifactId' => 'shizzle', 'version' => "2.2", 'groupId' => "bar", 'packaging' => "tar.gz"),
+        ]
+        repository = Nexus::Repository.new "http://sample.net/"
+        repository.stub!(:find_artifacts).and_return(@artifacts)
+        Nexus::Repository.stub!(:new).and_return(repository)
+      end
+
+      it "should return only matching artifacts" do
+        @artifacts.each do |desired_artifact|
+          dependency = Nexus::Dependency.new :uri => "http://sample.net/",
+                                             :name => desired_artifact.name,
+                                             :version => desired_artifact.version,
+                                             :group => desired_artifact.group,
+                                             :type => desired_artifact.type
+          dependency.desired_artifact.should == desired_artifact
+        end
+      end
+
+      it "should return nil if a matching artifact was not found" do
+        dependency = Nexus::Dependency.new :uri => "http://sample.net/", :name => "foobar"
+        dependency.desired_artifact.should be_nil
+      end
+
+      context "multiple matches" do
+        it "should return the artifact with the most recent version" do
+          dependency = Nexus::Dependency.new :uri => "http://sample.net/", :name => "shizzle", :type => "jar", :group => "foo"
+          dependency.desired_artifact.version.should == "2.2"
+        end
+      end
+    end
+  end
+
+  describe ".artifact_query_attributes" do
+    before { @dependency = Nexus::Dependency.new :name => "foo", :uri => "http://sample.net/", :type => 'tar.gz', :group => "bar" }
+
+    it "should include :group" do
+      @dependency.artifact_query_attributes[:group].should == "bar"
+    end
+
+    it "should include :name" do
+      @dependency.artifact_query_attributes[:name].should == "foo"
+    end
+
+    it "should include :type" do
+      @dependency.artifact_query_attributes[:type].should == "tar.gz"
+    end
+
+    it "should ignore everything else" do
+      @dependency.artifact_query_attributes.should_not have_key(:uri)
     end
   end
 
   describe ".artifact_attributes" do
-    before { @dependency = Nexus::Dependency.new :name => "foo", :uri => "http://sample.net/", :type => 'tar.gz', :group => "bar" }
+    before { @dependency = Nexus::Dependency.new :name => "foo", :uri => "http://sample.net/", :type => 'tar.gz', :group => "bar", :version => "2.2", :repo => "shizzle", :classifier => "large" }
 
     it "should include :group" do
       @dependency.artifact_attributes[:group].should == "bar"
@@ -87,6 +145,18 @@ describe Nexus::Dependency do
 
     it "should include :type" do
       @dependency.artifact_attributes[:type].should == "tar.gz"
+    end
+
+    it "should include :version" do
+      @dependency.artifact_attributes[:version].should == "2.2"
+    end
+
+    it "should include :repo" do
+      @dependency.artifact_attributes[:repo].should == "shizzle"
+    end
+
+    it "should include :classifier" do
+      @dependency.artifact_attributes[:classifier].should == "large"
     end
 
     it "should ignore everything else" do
