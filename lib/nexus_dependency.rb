@@ -4,6 +4,8 @@ require "rnexus"
 module Nexus
   class Dependency
     VERSION = '1.0.0'
+    ARTIFACT_ATTRIBUTES = [:group, :name, :type, :version, :repo, :classifier]
+    QUERY_ATTRIBUTES = [:group, :name, :type]
 
     attr_reader :attributes
 
@@ -27,11 +29,6 @@ module Nexus
       end
     end
 
-    def to_hash
-      raise NotImplementedError
-      options.merge(:name => attributes[:name])
-    end
-
     def installed_artifact_satisfies? other
       raise NotImplementedError
       if installed_artifact
@@ -52,11 +49,9 @@ module Nexus
     end
 
     def desired_artifact
-      possible_matches = repository.find_artifacts artifact_attributes
+      possible_matches = repository.find_artifacts project_attributes(QUERY_ATTRIBUTES)
       possible_matches = possible_matches.select do |possible_match|
-        artifact_attributes.inject(true) do |state, keyval|
-          state && possible_match.send(keyval.first) == keyval.last
-        end
+        artifact_matches? possible_match
       end
       possible_matches.inject(possible_matches.first) do |best, current|
         if best.version && current.version && current.version > best.version
@@ -71,17 +66,18 @@ module Nexus
       @repository ||= Nexus::Repository.new attributes[:uri]
     end
 
-    def artifact_attributes
+    def project_attributes attribute_names
       attributes.inject({}) do |hash, kv|
-        hash[kv.first] = kv.last if [:group, :name, :type, :version, :repo, :classifier].include?(kv.first)
+        hash[kv.first] = kv.last if attribute_names.include?(kv.first)
         hash
       end
     end
 
-    def artifact_query_attributes
-      attributes.inject({}) do |hash, kv|
-        hash[kv.first] = kv.last if [:group, :name, :type].include?(kv.first)
-        hash
+    private
+
+    def artifact_matches? artifact
+      project_attributes(ARTIFACT_ATTRIBUTES).inject(true) do |state, keyval|
+        state && artifact.send(keyval.first) == keyval.last
       end
     end
   end

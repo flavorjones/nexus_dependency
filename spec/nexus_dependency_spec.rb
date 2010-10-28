@@ -112,55 +112,15 @@ describe Nexus::Dependency do
     end
   end
 
-  describe ".artifact_query_attributes" do
-    before { @dependency = Nexus::Dependency.new :name => "foo", :uri => "http://sample.net/", :type => 'tar.gz', :group => "bar" }
-
-    it "should include :group" do
-      @dependency.artifact_query_attributes[:group].should == "bar"
-    end
-
-    it "should include :name" do
-      @dependency.artifact_query_attributes[:name].should == "foo"
-    end
-
-    it "should include :type" do
-      @dependency.artifact_query_attributes[:type].should == "tar.gz"
-    end
-
-    it "should ignore everything else" do
-      @dependency.artifact_query_attributes.should_not have_key(:uri)
-    end
-  end
-
-  describe ".artifact_attributes" do
+  describe ".project_attributes" do
     before { @dependency = Nexus::Dependency.new :name => "foo", :uri => "http://sample.net/", :type => 'tar.gz', :group => "bar", :version => "2.2", :repo => "shizzle", :classifier => "large" }
 
-    it "should include :group" do
-      @dependency.artifact_attributes[:group].should == "bar"
+    it "should include what we're projecting by" do
+      @dependency.project_attributes([:group])[:group].should == "bar"
     end
 
-    it "should include :name" do
-      @dependency.artifact_attributes[:name].should == "foo"
-    end
-
-    it "should include :type" do
-      @dependency.artifact_attributes[:type].should == "tar.gz"
-    end
-
-    it "should include :version" do
-      @dependency.artifact_attributes[:version].should == "2.2"
-    end
-
-    it "should include :repo" do
-      @dependency.artifact_attributes[:repo].should == "shizzle"
-    end
-
-    it "should include :classifier" do
-      @dependency.artifact_attributes[:classifier].should == "large"
-    end
-
-    it "should ignore everything else" do
-      @dependency.artifact_attributes.should_not have_key(:uri)
+    it "should not include what we're not projecting by" do
+      @dependency.project_attributes([:group]).should_not have_key(:version)
     end
   end
 end
