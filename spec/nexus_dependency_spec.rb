@@ -94,39 +94,27 @@ describe Nexus::Dependency do
       end
     end
 
-    context "version is specified" do
-      context "a package with a different version is installed" do
-        before do
-          @dependency.stub!(:installed_artifact).and_return(@installed_artifact)
-          @dependency.stub!(:desired_artifact).and_return(@desired_artifact)
-        end
-
-        it "should call .install" do
-          Nexus::Dependency.should_receive(:install).with(@desired_artifact)
-          @dependency.update
-        end
+    context "a package with a different version is installed" do
+      before do
+        @dependency.stub!(:installed_artifact).and_return(@installed_artifact)
+        @dependency.stub!(:desired_artifact).and_return(@desired_artifact)
       end
 
-      context "the artifact is already installed" do
-        before do
-          @dependency.stub!(:installed_artifact).and_return(@desired_artifact)
-          @dependency.stub!(:desired_artifact).and_return(@desired_artifact)
-        end
-
-        it "should not call .install" do
-          Nexus::Dependency.should_not_receive(:install)
-          @dependency.update
-        end
+      it "should call .install" do
+        Nexus::Dependency.should_receive(:install).with(@desired_artifact)
+        @dependency.update
       end
     end
 
-    context "version is not specified" do
-      context "the installed package is not the most recent" do
-        it "todo"
+    context "the artifact is already installed" do
+      before do
+        @dependency.stub!(:installed_artifact).and_return(@desired_artifact)
+        @dependency.stub!(:desired_artifact).and_return(@desired_artifact)
       end
 
-      context "the installed package is the most recent" do
-        it "todo"
+      it "should not call .install" do
+        Nexus::Dependency.should_not_receive(:install)
+        @dependency.update
       end
     end
   end
