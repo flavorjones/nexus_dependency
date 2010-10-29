@@ -78,17 +78,17 @@ describe Nexus::Dependency do
   describe "#update" do
     before do
       @dependency = Nexus::Dependency.new :name => "foo", :uri => "http://sample.net/"
-      @installed_artifact = Nexus::Artifact.new('artifactId' => 'foo', 'version' => "2.0", 'groupId' => "bar", 'packaging' => "jar")
-      @desired_artifact = Nexus::Artifact.new('artifactId' => 'foo', 'version' => "2.1", 'groupId' => "bar", 'packaging' => "jar")
+      @installed_artifact = Nexus::Artifact.new('artifactId' => 'foo', 'version' => "2.0")
+      @desired_artifact = Nexus::Artifact.new('artifactId' => 'foo', 'version' => "2.1")
     end
 
     context "nothing is installed" do
       before do
         @dependency.stub!(:installed_artifact).and_return(nil)
+        @dependency.stub!(:desired_artifact).and_return(@desired_artifact)
       end
 
       it "should call .install" do
-        @dependency.stub!(:desired_artifact).and_return(@desired_artifact)
         Nexus::Dependency.should_receive(:install).with(@desired_artifact)
         @dependency.update
       end
@@ -101,14 +101,22 @@ describe Nexus::Dependency do
           @dependency.stub!(:desired_artifact).and_return(@desired_artifact)
         end
 
-        it "should call fetch_artifact" do
+        it "should call .install" do
           Nexus::Dependency.should_receive(:install).with(@desired_artifact)
           @dependency.update
         end
       end
 
-      context "a package with a matching version is installed" do
-        it "todo"
+      context "the artifact is already installed" do
+        before do
+          @dependency.stub!(:installed_artifact).and_return(@desired_artifact)
+          @dependency.stub!(:desired_artifact).and_return(@desired_artifact)
+        end
+
+        it "should not call .install" do
+          Nexus::Dependency.should_not_receive(:install)
+          @dependency.update
+        end
       end
     end
 
