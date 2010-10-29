@@ -26,10 +26,12 @@ module Nexus
       #
       #  If an artifact specification option is specified, then packages will be filtered by that parameter.
       #  If no artifact specification options are specified, then no filtering will be done.
-      #  If +:version+ is not specified, then you'll receive the most recent version (naively, the last package when sorted by 'version')
+      #
+      #  If +:version+ is not specified, then 'nexus:update' will install the most recent version.
       #
       #  Example:
       #    nexus 'activemq'
+      #    nexus 'activemq', :packaging => 'tar.gz'
       #    nexus 'activemq', :version => "5.4.0", :packaging => 'tar.gz'
       #
       def nexus(attributes={})

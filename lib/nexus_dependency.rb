@@ -9,6 +9,12 @@ module Nexus
 
     attr_reader :attributes
 
+    class << self
+      def install artifact
+        raise NotImplementedError
+      end
+    end
+
     def initialize(attributes={})
       raise ArgumentError, "must specify :name" unless attributes[:name]
       raise ArgumentError, "must specify :uri"  unless attributes[:uri]
@@ -16,29 +22,13 @@ module Nexus
     end
 
     def install
-      raise NotImplementedError
-      update unless installed_artifact_satisfies? to_hash
+      update unless artifact_matches? installed_artifact
     end
 
     def update
-      raise NotImplementedError
-      unless installed_artifact_satisfies? desired_artifact
-        download_artifact
-        # unpack_artifact
-        # symlink_artifact
+      unless installed_artifact == desired_artifact
+        Nexus::Dependency.install desired_artifact
       end
-    end
-
-    def installed_artifact_satisfies? other
-      raise NotImplementedError
-      if installed_artifact
-        if Nexus::Artifact === other
-          # TODO
-        elsif Hash === other
-          # TODO
-        end
-      end
-      false
     end
 
     def installed_artifact
@@ -50,9 +40,7 @@ module Nexus
 
     def desired_artifact
       possible_matches = repository.find_artifacts project_attributes(QUERY_ATTRIBUTES)
-      possible_matches = possible_matches.select do |possible_match|
-        artifact_matches? possible_match
-      end
+      possible_matches = possible_matches.select { |a| artifact_matches? a }
       possible_matches.inject(possible_matches.first) do |best, current|
         if best.version && current.version && current.version > best.version
           current
@@ -76,6 +64,7 @@ module Nexus
     private
 
     def artifact_matches? artifact
+      return false if artifact.nil?
       project_attributes(ARTIFACT_ATTRIBUTES).inject(true) do |state, keyval|
         state && artifact.send(keyval.first) == keyval.last
       end

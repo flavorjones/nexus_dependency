@@ -1,7 +1,7 @@
 require 'spec/spec_helper'
 
 describe Nexus::Dependency do
-  describe "new" do
+  describe ".new" do
     it "should be callable" do
       d = Nexus::Dependency.new :name => "foo", :uri => "http://sample.net/"
       d.should be_instance_of(Nexus::Dependency)
@@ -34,13 +34,104 @@ describe Nexus::Dependency do
     end
   end
 
-  describe ".install" do
+  describe "#install" do
+    before do
+      @dependency = Nexus::Dependency.new :name => "foo", :uri => "http://sample.net/", :version => "2.1"
+      @nonmatching_artifact = Nexus::Artifact.new('artifactId' => 'foo', 'version' => "2.0")
+      @matching_artifact = Nexus::Artifact.new('artifactId' => 'foo', 'version' => "2.1")
+    end
+
+    context "nothing is installed" do
+      before do
+        @dependency.stub!(:installed_artifact).and_return(nil)
+      end
+
+      it "should call update" do
+        @dependency.should_receive(:update)
+        @dependency.install
+      end
+    end
+
+    context "a non-matching package is installed" do
+      before do
+        @dependency.stub!(:installed_artifact).and_return(@nonmatching_artifact)
+      end
+
+      it "should call update" do
+        @dependency.should_receive(:update)
+        @dependency.install
+      end
+    end
+
+    context "a matching package is installed" do
+      before do
+        @dependency.stub!(:installed_artifact).and_return(@matching_artifact)
+      end
+
+      it "should not call update" do
+        @dependency.should_not_receive(:update)
+        @dependency.install
+      end
+    end
   end
 
-  describe ".update" do
+  describe "#update" do
+    before do
+      @dependency = Nexus::Dependency.new :name => "foo", :uri => "http://sample.net/"
+      @installed_artifact = Nexus::Artifact.new('artifactId' => 'foo', 'version' => "2.0", 'groupId' => "bar", 'packaging' => "jar")
+      @desired_artifact = Nexus::Artifact.new('artifactId' => 'foo', 'version' => "2.1", 'groupId' => "bar", 'packaging' => "jar")
+    end
+
+    context "nothing is installed" do
+      before do
+        @dependency.stub!(:installed_artifact).and_return(nil)
+      end
+
+      it "should call .install" do
+        @dependency.stub!(:desired_artifact).and_return(@desired_artifact)
+        Nexus::Dependency.should_receive(:install).with(@desired_artifact)
+        @dependency.update
+      end
+    end
+
+    context "version is specified" do
+      context "a package with a different version is installed" do
+        before do
+          @dependency.stub!(:installed_artifact).and_return(@installed_artifact)
+          @dependency.stub!(:desired_artifact).and_return(@desired_artifact)
+        end
+
+        it "should call fetch_artifact" do
+          Nexus::Dependency.should_receive(:install).with(@desired_artifact)
+          @dependency.update
+        end
+      end
+
+      context "a package with a matching version is installed" do
+        it "todo"
+      end
+    end
+
+    context "version is not specified" do
+      context "the installed package is not the most recent" do
+        it "todo"
+      end
+
+      context "the installed package is the most recent" do
+        it "todo"
+      end
+    end
   end
 
-  describe ".desired_artifact" do
+  describe "#installed_artifact" do
+    it "todo"
+  end
+
+  describe ".fetch_artifact" do
+    it "todo"
+  end
+
+  describe "#desired_artifact" do
     context "without artifact options" do
       before { @dependency = Nexus::Dependency.new :name => "foo", :uri => "http://sample.net/" }
 
@@ -112,8 +203,10 @@ describe Nexus::Dependency do
     end
   end
 
-  describe ".project_attributes" do
-    before { @dependency = Nexus::Dependency.new :name => "foo", :uri => "http://sample.net/", :type => 'tar.gz', :group => "bar", :version => "2.2", :repo => "shizzle", :classifier => "large" }
+  describe "#project_attributes" do
+    before do
+      @dependency = Nexus::Dependency.new :name => "foo", :uri => "http://sample.net/", :group => "bar", :version => "2.2"
+    end
 
     it "should include what we're projecting by" do
       @dependency.project_attributes([:group])[:group].should == "bar"
