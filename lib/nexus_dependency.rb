@@ -6,14 +6,9 @@ module Nexus
     VERSION = '1.0.0'
     ARTIFACT_ATTRIBUTES = [:group, :name, :type, :version, :repo, :classifier]
     QUERY_ATTRIBUTES = [:group, :name, :type]
+    RELATIVE_CACHE_PATH = "vendor/nexus"
 
     attr_reader :attributes
-
-    class << self
-      def install artifact
-        raise NotImplementedError
-      end
-    end
 
     def initialize(attributes={})
       raise ArgumentError, "must specify :name" unless attributes[:name]
@@ -26,9 +21,12 @@ module Nexus
     end
 
     def update
-      unless installed_artifact == desired_artifact
-        Nexus::Dependency.install desired_artifact
-      end
+      update! unless installed_artifact == desired_artifact
+    end
+
+    def update!
+      FileUtils.mkdir_p RELATIVE_CACHE_PATH
+      File.open("#{RELATIVE_CACHE_PATH}/#{attributes[:name]}.artifact","w") { |f| f.write desired_artifact.to_hash.to_yaml }
     end
 
     def installed_artifact

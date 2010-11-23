@@ -88,8 +88,8 @@ describe Nexus::Dependency do
         @dependency.stub!(:desired_artifact).and_return(@desired_artifact)
       end
 
-      it "should call .install" do
-        Nexus::Dependency.should_receive(:install).with(@desired_artifact)
+      it "should call #update!" do
+        @dependency.should_receive(:update!)
         @dependency.update
       end
     end
@@ -100,8 +100,8 @@ describe Nexus::Dependency do
         @dependency.stub!(:desired_artifact).and_return(@desired_artifact)
       end
 
-      it "should call .install" do
-        Nexus::Dependency.should_receive(:install).with(@desired_artifact)
+      it "should call #update!" do
+        @dependency.should_receive(:update!)
         @dependency.update
       end
     end
@@ -112,19 +112,45 @@ describe Nexus::Dependency do
         @dependency.stub!(:desired_artifact).and_return(@desired_artifact)
       end
 
-      it "should not call .install" do
-        Nexus::Dependency.should_not_receive(:install)
+      it "should not call #update!" do
+        @dependency.should_not_receive(:update!)
         @dependency.update
       end
     end
   end
 
-  describe "#installed_artifact" do
-    it "todo"
+  describe "#update!" do
+    before do
+      @desired_artifact = Nexus::Artifact.new('artifactId' => 'foo', 'version' => "2.1")
+      @dependency = Nexus::Dependency.new :name => "foo", :uri => "http://sample.net/foo-bar-bazz-2.1.zip", :version => "2.1"
+      @dependency.stub!(:desired_artifact).and_return(@desired_artifact)
+    end
+
+    context "the desired artifact is already installed" do
+      it "should blow away the package"
+
+      context "it's a tar.gz" do
+        it "should blow away the directory"
+      end
+    end
+
+    it "downloads the remote package that matches the desired artifact"
+    it "writes the artifact of the newly-installed package" do
+      @dependency.update!
+      File.should exist("vendor/nexus/foo.artifact")
+      Nexus::Artifact.new(YAML.load_file("vendor/nexus/foo.artifact")).should == @desired_artifact
+    end
+
+    it "symlinks a generic name to the versioned package"
+
+    context "it's a tar.gz" do
+      it "unarchives the contents into a versioned directory"
+      it "symlinks a generic name to the versioned directory"
+    end
   end
 
-  describe ".fetch_artifact" do
-    it "todo"
+  describe "#installed_artifact" do
+    it "returns the artifact of the installed package"
   end
 
   describe "#desired_artifact" do

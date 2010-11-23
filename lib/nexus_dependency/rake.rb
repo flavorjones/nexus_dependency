@@ -30,9 +30,9 @@ module Nexus
       #  If +:version+ is not specified, then 'nexus:update' will install the most recent version.
       #
       #  Example:
-      #    nexus 'activemq'
-      #    nexus 'activemq', :packaging => 'tar.gz'
-      #    nexus 'activemq', :version => "5.4.0", :packaging => 'tar.gz'
+      #    nexus :name => 'activemq'
+      #    nexus :name => 'activemq', :packaging => 'tar.gz'
+      #    nexus :name => 'activemq', :version => "5.4.0", :packaging => 'tar.gz'
       #
       def nexus(attributes={})
         ::Rake.application.in_namespace "nexus" do
@@ -47,4 +47,3 @@ module Nexus
     end
   end
 end
-
