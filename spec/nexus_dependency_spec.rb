@@ -121,36 +121,116 @@ describe Nexus::Dependency do
 
   describe "#update!" do
     before do
-      @desired_artifact = Nexus::Artifact.new('artifactId' => 'foo', 'version' => "2.1")
-      @dependency = Nexus::Dependency.new :name => "foo", :uri => "http://sample.net/foo-bar-bazz-2.1.zip", :version => "2.1"
+      @desired_artifact = Nexus::Artifact.new('artifactId' => 'foo', 'version' => "2.1", 'packaging' => 'jar')
+      @dependency = Nexus::Dependency.new :name => "foo", :uri => "http://sample.net/foo-bar-bazz-2.1.jar", :version => "2.1"
       @dependency.stub!(:desired_artifact).and_return(@desired_artifact)
     end
 
-    context "the desired artifact is already installed" do
-      it "should blow away the package"
-
-      context "it's a tar.gz" do
-        it "should blow away the directory"
-      end
+    it "downloads the remote package that matches the desired artifact" do
+      @dependency.repository.should_receive(:download).with(@desired_artifact).and_return("FOO BAR BAZZ")
+      @dependency.update!
+      File.should exist("vendor/nexus/foo-bar-bazz-2.1.jar")
+      File.read("vendor/nexus/foo-bar-bazz-2.1.jar").should == "FOO BAR BAZZ"
     end
 
-    it "downloads the remote package that matches the desired artifact"
     it "writes the artifact of the newly-installed package" do
+      @dependency.repository.stub!(:download).with(@desired_artifact)
       @dependency.update!
       File.should exist("vendor/nexus/foo.artifact")
       Nexus::Artifact.new(YAML.load_file("vendor/nexus/foo.artifact")).should == @desired_artifact
     end
 
-    it "symlinks a generic name to the versioned package"
+    it "symlinks a generic name to the versioned package" do
+      @dependency.repository.stub!(:download).with(@desired_artifact)
+      @dependency.update!
+      File.should exist("vendor/nexus/foo.jar")
+      File.symlink?("vendor/nexus/foo.jar").should be_true
+      File.readlink("vendor/nexus/foo.jar").should == "foo-bar-bazz-2.1.jar"
+    end
 
     context "it's a tar.gz" do
-      it "unarchives the contents into a versioned directory"
-      it "symlinks a generic name to the versioned directory"
+      before do
+        @desired_artifact = Nexus::Artifact.new('artifactId' => 'foo', 'version' => "2.1", 'packaging' => 'tar.gz')
+        @dependency = Nexus::Dependency.new :name => "foo", :uri => "http://sample.net/foo-bar-bazz-2.1.tar.gz", :version => "2.1"
+        @dependency.stub!(:desired_artifact).and_return(@desired_artifact)
+        @test_archive = File.read File.join(TEST_ASSET_DIRECTORY, "foo.tar.gz")
+      end
+
+      it "unarchives the contents into a versioned directory" do
+        @dependency.repository.should_receive(:download).with(@desired_artifact).and_return(@test_archive)
+        @dependency.update!
+        File.directory?("vendor/nexus/foo-bar-bazz-2.1").should be_true
+        File.exists?("vendor/nexus/foo-bar-bazz-2.1/bin/foo").should be_true
+        File.exists?("vendor/nexus/foo-bar-bazz-2.1/lib/foo.so").should be_true
+      end
+
+      it "symlinks a generic name to the versioned directory" do
+        @dependency.repository.should_receive(:download).with(@desired_artifact).and_return(@test_archive)
+        @dependency.update!
+        File.symlink?("vendor/nexus/foo").should be_true
+        File.readlink("vendor/nexus/foo").should == "foo-bar-bazz-2.1"
+      end
+    end
+
+    context "the desired artifact is already installed" do
+      before do
+        FileUtils.rm_f "vendor/nexus/foo-bar-bazz-2.1.jar"
+        FileUtils.touch "vendor/nexus/foo-bar-bazz-2.1.jar"
+      end
+
+      it "should blow away the package" do
+        File.read("vendor/nexus/foo-bar-bazz-2.1.jar").should == ""
+        @dependency.repository.should_receive(:download).with(@desired_artifact).and_return("FOO BAR BAZZ")
+        @dependency.update!
+        File.read("vendor/nexus/foo-bar-bazz-2.1.jar").should == "FOO BAR BAZZ"
+      end
+
+      context "it's a tar.gz" do
+        before do
+          @desired_artifact = Nexus::Artifact.new('artifactId' => 'foo', 'version' => "2.1", 'packaging' => 'tar.gz')
+          @dependency = Nexus::Dependency.new :name => "foo", :uri => "http://sample.net/foo-bar-bazz-2.1.tar.gz", :version => "2.1"
+          @dependency.stub!(:desired_artifact).and_return(@desired_artifact)
+          FileUtils.rm_rf "vendor/nexus/foo-bar-bazz-2.1"
+          FileUtils.mkdir "vendor/nexus/foo-bar-bazz-2.1"
+          FileUtils.touch "vendor/nexus/foo-bar-bazz-2.1/should-be-removed"
+        end
+
+        it "should blow away the directory" do
+          test_archive = File.read File.join(TEST_ASSET_DIRECTORY, "foo.tar.gz")
+          @dependency.repository.should_receive(:download).with(@desired_artifact).and_return(test_archive)
+          @dependency.update!
+          File.exists?("vendor/nexus/foo-bar-bazz-2.1/should-be-removed").should be_false
+          File.exists?("vendor/nexus/foo-bar-bazz-2.1/bin/foo").should be_true
+        end
+      end
     end
   end
 
   describe "#installed_artifact" do
-    it "returns the artifact of the installed package"
+    before do
+      @dependency = Nexus::Dependency.new :name => "foo", :uri => "http://sample.net/foo-bar-bazz-2.1.tar.gz", :version => "2.1"
+      FileUtils.rm_rf "vendor/nexus"
+      FileUtils.mkdir "vendor/nexus"
+    end
+
+    context "given an artifact is installed" do
+      before do
+        @installed_artifact = Nexus::Artifact.new('artifactId' => 'foo', 'version' => "2.0", 'packaging' => 'tar.gz')
+        File.open "vendor/nexus/foo.artifact", "w" do |f|
+          f.write @installed_artifact.to_hash.to_yaml
+        end
+      end
+
+      it "returns the artifact of the installed package" do
+        @dependency.installed_artifact.should == @installed_artifact
+      end
+    end
+
+    context "given an artifact is not installed" do
+      it "returns nil" do
+        @dependency.installed_artifact.should be_nil
+      end
+    end
   end
 
   describe "#desired_artifact" do

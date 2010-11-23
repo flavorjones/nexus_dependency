@@ -26,13 +26,42 @@ module Nexus
 
     def update!
       FileUtils.mkdir_p RELATIVE_CACHE_PATH
-      File.open("#{RELATIVE_CACHE_PATH}/#{attributes[:name]}.artifact","w") { |f| f.write desired_artifact.to_hash.to_yaml }
+      fq_filename = File.basename attributes[:uri]
+      short_filename = "#{desired_artifact.name}.#{desired_artifact.type}"
+      Dir.chdir RELATIVE_CACHE_PATH do
+        File.open fq_filename, "wb" do |f|
+          f.write repository.download(desired_artifact)
+        end
+        File.open "#{attributes[:name]}.artifact", "w" do |f|
+          f.write desired_artifact.to_hash.to_yaml
+        end
+        FileUtils.rm_f short_filename
+        File.symlink fq_filename, short_filename
+
+        if desired_artifact.type == "tar.gz"
+          fq_dir = fq_filename.sub(/\.tar\.gz$/,'')
+          short_dir = desired_artifact.name
+          FileUtils.rm_rf fq_dir
+          FileUtils.mkdir fq_dir
+          Dir.chdir fq_dir do
+            # oh man, don't get on my case, windows guys.
+            system("tar -zxf ../#{fq_filename}") || raise("tarball extraction failed")
+          end
+
+          FileUtils.rm_f short_dir
+          File.symlink fq_dir, short_dir
+        end
+      end
     end
 
     def installed_artifact
-      raise NotImplementedError
       @installed_artifact ||= begin
-                                # TODO
+                                artifact_record = "#{File.join(RELATIVE_CACHE_PATH, attributes[:name])}.artifact"
+                                if File.exists? artifact_record
+                                  Artifact.new(YAML.load_file artifact_record)
+                                else
+                                  nil
+                                end
                               end
     end
 
