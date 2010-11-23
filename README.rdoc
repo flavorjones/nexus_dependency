@@ -1,41 +1,56 @@
 = nexus_dependency
 
-* FIX (url)
+* https://github.com/flavorjones/nexus_dependency
 
 == DESCRIPTION:
 
-FIX (describe your package)
+If you've got dependencies on packages that live in a Nexus
+repository, now you can resolve those dependencies, bundler-style.
 
 == FEATURES/PROBLEMS:
 
-* FIX (list of features or problems)
+* Rake tasks created: 'rake nexus:install' and 'rake nexus:update', which work similarly to 'bundle install' and 'bundle update'.
+* Packages are installed into vendor/nexus, which is not configurable right now.
+* Tarballs are also extracted into vendor/nexus/<packagename>
+* ... except on windows :`(
 
 == SYNOPSIS:
 
-  FIX (code sample of usage)
+    # -- Rakefile --
+    require 'nexus_dependency/rake'
+
+    # any version will do
+    nexus :name => 'super-library', :uri => 'http://nexus.local/nexus'
+
+    # specify a particular version
+    nexus :name => 'activemq',      :uri => 'http://nexus.local/nexus', :type => 'jar', :version => '5.4.0'
+
+You can optionally specify +:group+, +:repo+ or +:classifier+.
+
+You can also access the dependency-tracking classes programmatically.
 
 == REQUIREMENTS:
 
-* FIX (list of requirements)
+* rnexus >= 0.0.7
 
 == INSTALL:
 
-* FIX (sudo gem install, anything else)
+* gem install nexus_dependency
 
 == DEVELOPERS:
 
 After checking out the source, run:
 
-  $ rake newb
+  $ bundle install
+  $ bundle exec rake spec
 
-This task will install any missing dependencies, run the tests/specs,
-and generate the RDoc.
+This will install dependencies and run the tests.
 
 == LICENSE:
 
 (The MIT License)
 
-Copyright (c) 2010 FIX
+Copyright (c) 2010 Mike Dalessio and Benchmark Solutions
 
 Permission is hereby granted, free of charge, to any person obtaining
 a copy of this software and associated documentation files (the
