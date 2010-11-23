@@ -1,3 +1,4 @@
+require "rake"
 require "nexus_dependency"
 
 #

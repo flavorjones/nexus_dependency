@@ -1,4 +1,3 @@
-require "rake"
 require "rnexus"
 
 module Nexus
