@@ -1,3 +1,5 @@
+require "nexus_dependency"
+
 #
 #  Rake tasks 'nexus:install' and 'nexus:update' are created if any nexus dependencies are declared.
 #
@@ -30,9 +32,9 @@ module Nexus
       #  If +:version+ is not specified, then 'nexus:update' will install the most recent version.
       #
       #  Example:
-      #    nexus :name => 'activemq'
-      #    nexus :name => 'activemq', :packaging => 'tar.gz'
-      #    nexus :name => 'activemq', :version => "5.4.0", :packaging => 'tar.gz'
+      #    nexus :name => 'activemq', :uri => 'http://nexus.local/nexus'
+      #    nexus :name => 'activemq', :uri => 'http://nexus.local/nexus', :packaging => 'tar.gz'
+      #    nexus :name => 'activemq', :uri => 'http://nexus.local/nexus', :version => "5.4.0", :packaging => 'tar.gz'
       #
       def nexus(attributes={})
         ::Rake.application.in_namespace "nexus" do

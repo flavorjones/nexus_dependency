@@ -98,5 +98,3 @@ module Nexus
     end
   end
 end
-
-require "nexus_dependency/rake"
